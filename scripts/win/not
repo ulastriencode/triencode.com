@@ -1,0 +1,9 @@
+# # 1 kez kurulum
+# .\scripts\win\init.ps1
+
+# # Tenant oluşturma/düzeltme
+# .\scripts\win\tenant.ps1 -Schema sonerdicanav -Domain sonerdicanav.localhost
+# .\scripts\win\tenant.ps1 -Schema emirkevserav -Domain emirkevserav.localhost
+
+# # Çalıştır
+# .\scripts\win\run.ps1

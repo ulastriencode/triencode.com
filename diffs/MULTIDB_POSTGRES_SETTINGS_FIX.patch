@@ -1,0 +1,63 @@
+--- original/avukatlik_portali/settings/base.py
++++ updated/avukatlik_portali/settings/base.py
+@@ -99,11 +99,7 @@
+     if app not in INSTALLED_APPS:
+         INSTALLED_APPS.append(app)
+ 
+-
+-TENANT_MODEL = "clients.Client"
+-TENANT_DOMAIN_MODEL = "clients.Domain"
+-
+-DATABASE_ROUTERS = [
++DATABASE_ROUTERS = ['tenancy.db_router.HostDatabaseRouter', 'avukatlik_portali.dbrouter.RowLevelRouter']
+     "django_tenants.routers.TenantSyncRouter",
+ ]
+ 
+@@ -131,14 +127,15 @@
+         "OPTIONS": {"connect_timeout": 10},
+     }
+ }
+-DATABASE_ROUTERS = ["django_tenants.routers.TenantSyncRouter"]
++DATABASE_ROUTERS = ['tenancy.db_router.HostDatabaseRouter', 'avukatlik_portali.dbrouter.RowLevelRouter']
+ }
+ 
+ AUTH_USER_MODEL = "users.User"
+ ADMIN_PANEL_DOMAIN = os.getenv("ADMIN_PANEL_DOMAIN", "admin.localhost")
+ # ------------ Middleware ------------
+ MIDDLEWARE = [
+-    "django_tenants.middleware.main.TenantMainMiddleware",
++    'tenancy.middleware.CurrentTenantMiddleware',
++    "tenancy.middleware.CurrentTenantMiddleware",
+     "avukatlik_portali.middleware.RedirectPublicAdminMiddleware",# ① en üstte
+     "corsheaders.middleware.CorsMiddleware",                # ② CORS (yükseklerde)
+     "django.middleware.security.SecurityMiddleware",
+
+
+--- original/portal/settings/base.py
++++ updated/portal/settings/base.py
+@@ -19,7 +19,8 @@
+ ]
+ 
+ MIDDLEWARE = [
+-    'django_tenants.middleware.main.TenantMainMiddleware',
++    'tenancy.middleware.CurrentTenantMiddleware',
++    'tenancy.middleware.CurrentTenantMiddleware',
+     "django.middleware.security.SecurityMiddleware",
+     "django.contrib.sessions.middleware.SessionMiddleware",
+     "django.middleware.common.CommonMiddleware",
+@@ -71,7 +72,7 @@
+         "OPTIONS": {"connect_timeout": 10},
+     }
+ }
+-DATABASE_ROUTERS = ["django_tenants.routers.TenantSyncRouter"]
++DATABASE_ROUTERS = ['tenancy.db_router.HostDatabaseRouter', 'avukatlik_portali.dbrouter.RowLevelRouter']
+ }
+ 
+ CACHES = {
+@@ -94,6 +95,3 @@
+ }
+ 
+ DEFAULT_TENANT_DOMAIN = os.getenv("DEFAULT_TENANT_DOMAIN", "firma1.localhost")
+-
+-TENANT_MODEL = 'clients.Client'
+-TENANT_DOMAIN_MODEL = 'clients.Domain'

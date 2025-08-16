@@ -1,0 +1,161 @@
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Bypass -Force
+.\kurulum.ps1 -FreshDb -AdminUser admin -AdminPass "Admin123!" -AdminEmail admin@example.com
+
+
+<# =====================================================================
+  kurulum.ps1  –  Avukatlık Portalı (rowlevel.py + SQLite) hızlı kurulum
+  - Venv oluşturur
+  - Paketleri kurar
+  - Gerekli migration’ları (tenancy 0002 için fake dahil) uygular
+  - 3 veritabanı alias’ını hazırlar: default, sonerdicanav, emirkevserav
+  - Tenant kayıtlarını ve süper kullanıcıları oluşturur
+  - (İstersen) en sonda development server’ı başlatır
+===================================================================== #>
+
+param(
+  [string] $ProjectRoot = ".",
+  [switch] $FreshDb,                          # DB’leri sıfırdan kur
+  [string] $PythonVersion = "3",              # py -3 kullanır
+  [string] $VenvPath = ".\.venv",
+  [string] $Requirements = "requirements.txt",
+  [string] $AdminUser = "admin",
+  [string] $AdminPass = "Admin123!",
+  [string] $AdminEmail = "admin@example.com",
+  [switch] $RunServer                         # biter bitmez runserver aç
+)
+
+$ErrorActionPreference = "Stop"
+$ProgressPreference = 'SilentlyContinue'
+
+# --- Yol/araçlar ---
+Set-Location $ProjectRoot
+$pythonFromVenv = Join-Path $VenvPath "Scripts\python.exe"
+$pipFromVenv    = Join-Path $VenvPath "Scripts\pip.exe"
+$SETTINGS = "avukatlik_portali.settings.rowlevel"
+
+function ExecPy([string[]] $args) {
+  & $pythonFromVenv @args
+}
+
+function Say([string] $msg) {
+  Write-Host ">>> $msg" -ForegroundColor Cyan
+}
+
+# --- 0) Venv + paketler ---
+if (!(Test-Path $pythonFromVenv)) {
+  Say "Sanal ortam oluşturuluyor: $VenvPath"
+  & py -$PythonVersion -m venv $VenvPath
+}
+Say "pip güncelleniyor"
+& $pythonFromVenv -m pip install --upgrade pip
+
+if (Test-Path $Requirements) {
+  Say "Paketler yükleniyor (requirements.txt)"
+  & $pipFromVenv install -r $Requirements
+} else {
+  Say "requirements.txt yok — temel paketler yükleniyor"
+  & $pipFromVenv install `
+    "Django>=5.0,<5.1" `
+    djangorestframework `
+    djangorestframework-simplejwt `
+    drf-yasg `
+    django-cors-headers
+}
+
+# --- 1) DB dosyaları (FreshDb ise temizle) ---
+$baseDir = Join-Path (Resolve-Path ".") "avukatlik_portali"
+$dbMap = @{
+  default      = Join-Path $baseDir "db_default.sqlite3"
+  sonerdicanav = Join-Path $baseDir "db_sonerdicanav.sqlite3"
+  emirkevserav = Join-Path $baseDir "db_emirkevserav.sqlite3"
+}
+
+if ($FreshDb) {
+  Say "FreshDb seçildi — eski SQLite dosyaları temizleniyor"
+  foreach ($p in $dbMap.Values) {
+    if (Test-Path $p) { Remove-Item $p -Force }
+  }
+}
+
+# --- 2) Migration yardımcıları ---
+function Migrate-CoreApps([string] $alias) {
+  $apps = @(
+    "contenttypes","auth","admin",
+    "users","accounts","clients","directory","sessions"
+  )
+  foreach ($a in $apps) {
+    Say "[$alias] migrate $a"
+    ExecPy @("manage.py","migrate",$a,"--database",$alias,"--settings=$SETTINGS")
+  }
+}
+
+function Migrate-Tenancy([string] $alias) {
+  Say "[$alias] tenancy 0001"
+  ExecPy @("manage.py","migrate","tenancy","0001","--database",$alias,"--settings=$SETTINGS")
+
+  Say "[$alias] tenancy 0002 (Postgres-özel SQL -> FAKE)"
+  ExecPy @("manage.py","migrate","tenancy","0002_remove_tenant_theme_alter_tenant_domain_and_more","--fake","--database",$alias,"--settings=$SETTINGS")
+
+  Say "[$alias] tenancy kalanlar"
+  ExecPy @("manage.py","migrate","tenancy","--database",$alias,"--settings=$SETTINGS")
+}
+
+# --- 3) Her alias için şema oluştur ---
+foreach ($alias in $dbMap.Keys) {
+  Say "============================"
+  Say "DB Hazırlanıyor: $alias"
+  Migrate-CoreApps $alias
+  Migrate-Tenancy  $alias
+}
+
+# --- 4) Tenant kayıtları ---
+function Ensure-Tenant([string] $alias, [string] $name, [string] $schema, [string] $domain) {
+  $code = @"
+from clients.models import Client, Domain
+c, _ = Client.objects.using('$alias').get_or_create(
+    name='$name',
+    defaults={'schema_name':'$schema'}
+)
+c.db_alias = '$alias'
+c.save(using='$alias')
+Domain.objects.using('$alias').get_or_create(
+    tenant=c, domain='$domain', defaults={'is_primary': True}
+)
+print('OK: $alias -> $domain')
+"@
+  Say "[$alias] tenant kaydı oluşturuluyor ($domain)"
+  ExecPy @("manage.py","shell","--settings=$SETTINGS","-c", $code)
+}
+
+Ensure-Tenant -alias "sonerdicanav" -name "Soner Dican AV" -schema "sonerdicanav" -domain "sonerdicanav.localhost"
+Ensure-Tenant -alias "emirkevserav" -name "Emir Kevser AV" -schema "emirkevserav" -domain "emirkevserav.localhost"
+
+# --- 5) Süper kullanıcılar (3 DB) ---
+$env:DJANGO_SUPERUSER_USERNAME = $AdminUser
+$env:DJANGO_SUPERUSER_EMAIL    = $AdminEmail
+$env:DJANGO_SUPERUSER_PASSWORD = $AdminPass
+
+function Ensure-Superuser([string] $alias) {
+  try {
+    Say "[$alias] createsuperuser (noinput)"
+    ExecPy @("manage.py","createsuperuser","--noinput","--database",$alias,"--settings=$SETTINGS")
+  } catch {
+    Write-Host "[$alias] createsuperuser atlandı (muhtemelen zaten var)" -ForegroundColor Yellow
+  }
+}
+
+foreach ($alias in $dbMap.Keys) { Ensure-Superuser $alias }
+
+# --- 6) Bilgi / opsiyonel runserver ---
+Write-Host ""
+Write-Host "Kurulum tamam." -ForegroundColor Green
+Write-Host "Admin paneller:"
+Write-Host "  http://sonerdicanav.localhost:8000/admin"
+Write-Host "  http://emirkevserav.localhost:8000/admin"
+Write-Host "  http://localhost:8000/admin"
+Write-Host ""
+
+if ($RunServer) {
+  Say "runserver başlatılıyor (CTRL+C ile durdur)"
+  ExecPy @("manage.py","runserver","--settings=$SETTINGS")
+}

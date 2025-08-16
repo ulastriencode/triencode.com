@@ -1,0 +1,2 @@
+python manage.py ensure_public
+python manage.py create_tenant --schema sonerdicanav --domain sonerdicanav.localhost

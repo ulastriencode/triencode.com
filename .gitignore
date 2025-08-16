@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+
+# Env
+.env
+.env.dev
+.env.prod
+.env.local
+
+# Node/Frontend
+node_modules/
+.next/
+dist/
+build/
+
+# Misc
+.coverage
+*.log
+*.tar
+*.tar.gz

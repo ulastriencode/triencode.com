@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+
+:root {
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+   --color-primary: #1e3a8a;
+  --color-accent:  #22d3ee;
+  --color-primary-rgb: 30 58 138;
+  --color-accent-rgb:  34 211 238;
+}
