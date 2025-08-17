@@ -57,13 +57,6 @@ if not SECRET_KEY:
 
 DEBUG = env_bool("DEBUG", default=True)
 
-ALLOWED_HOSTS = env_list(
-    "ALLOWED_HOSTS",
-    default=[
-        "127.0.0.1", "localhost",
-        "emirkevserav.localhost", "sonerdicanav.localhost","ulasdemirav.localhost","deneme.localhost",
-    ],
-)
 
 SHARED_APPS = [
     'django_tenants',     # her zaman ilk

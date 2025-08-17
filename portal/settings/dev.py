@@ -3,7 +3,6 @@ from datetime import timedelta
 
 # Debug & Hosts
 DEBUG = True
-ALLOWED_HOSTS = ["127.0.0.1", "localhost","emirkevserav.localhost", "sonerdicanav.localhost", "ulasdemirav.localhost","deneme.localhost"]
 
 # Apps Configuration
 ADDITIONAL_APPS = [

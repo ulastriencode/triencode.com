@@ -40,104 +40,20 @@ DATABASES = {
 }
 
 HOST_DB_MAP = {
-    'sonerdicanav.localhost': 'sonerdicanav',
-    'emirkevserav.localhost': 'emirkevserav',
-    'ulasdemirav.localhost': 'ulasdemirav',
-    'deneme.localhost': 'deneme',
-
-    'a.localhost': 'a',
-    'b.localhost': 'b',
-    'f.localhost': 'f',}
+    'deneme.localhost': 'deneme',}
 
 DEFAULT_DB_ALIAS = 'default'
 
 # '.localhost' wildcard tek başına alt domainlerin hepsini kapsar.
-# Yine de istersen tekil hostları eklemeye devam edebilirsin.
-ALLOWED_HOSTS = [
-    '127.0.0.1',
-    'localhost',
-    '.localhost',
-
-
- 'sonerdicanav.localhost',
- 'emirkevserav.localhost',
- 'a.localhost',
- 'b.localhost',
- 'f.localhost',]
-
 
 # ---- auto-added by create_tenant.py ----
-DATABASES['sonerdicanav'] = {
+DATABASES['deneme'] = {
     'ENGINE': 'django.db.backends.postgresql',
-    'NAME': 'avp_sonerdicanav',
+    'NAME': 'avp_deneme',
     'USER': 'postgres',
-    'PASSWORD': 'postgres',
+    'PASSWORD': '1',
     'HOST': '127.0.0.1',
     'PORT': '5432',
 }
 
-
-# ---- auto-added by create_tenant.py ----
-DATABASES['emirkevserav'] = {
-    'ENGINE': 'django.db.backends.postgresql',
-    'NAME': 'avp_emirkevserav',
-    'USER': 'postgres',
-    'PASSWORD': 'postgres',
-    'HOST': '127.0.0.1',
-    'PORT': '5432',
-}
-
-
-# ---- auto-added by create_tenant.py ----
-DATABASES['avp_ulasdemirav'] = {
-    'ENGINE': 'django.db.backends.postgresql',
-    'NAME': 'avp_avp_ulasdemirav',
-    'USER': 'postgres',
-    'PASSWORD': 'postgres',
-    'HOST': '127.0.0.1',
-    'PORT': '5432',
-}
-
-
-# ---- auto-added by create_tenant.py ----
-DATABASES['ulasdemirav'] = {
-    'ENGINE': 'django.db.backends.postgresql',
-    'NAME': 'avp_ulasdemirav',
-    'USER': 'postgres',
-    'PASSWORD': 'postgres',
-    'HOST': '127.0.0.1',
-    'PORT': '5432',
-}
-
-
-# ---- auto-added by create_tenant.py ----
-DATABASES['a'] = {
-    'ENGINE': 'django.db.backends.postgresql',
-    'NAME': 'avp_a',
-    'USER': 'postgres',
-    'PASSWORD': 'postgres',
-    'HOST': '127.0.0.1',
-    'PORT': '5432',
-}
-
-
-# ---- auto-added by create_tenant.py ----
-DATABASES['b'] = {
-    'ENGINE': 'django.db.backends.postgresql',
-    'NAME': 'avp_b',
-    'USER': 'postgres',
-    'PASSWORD': 'postgres',
-    'HOST': '127.0.0.1',
-    'PORT': '5432',
-}
-
-
-# ---- auto-added by create_tenant.py ----
-DATABASES['f'] = {
-    'ENGINE': 'django.db.backends.postgresql',
-    'NAME': 'avp_f',
-    'USER': 'postgres',
-    'PASSWORD': 'postgres',
-    'HOST': '127.0.0.1',
-    'PORT': '5432',
-}
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'deneme.localhost']
